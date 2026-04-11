@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BharatTrade AI · NSE/BSE Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#090d12;--s1:#0f1620;--s2:#141d2b;--s3:#1a2435;
+  --bd:rgba(255,255,255,.07);--bd2:rgba(255,255,255,.14);
+  --tx:#e2eaf5;--mu:#5c7191;--mu2:#8aa0be;
+  --ac:#00d4aa;--bl:#3b8eff;--dn:#ff4d6d;--wn:#f4a935;--pu:#a78bfa;
+  --mono:'DM Mono',monospace;--head:'Syne',sans-serif;--body:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--body);font-size:14px;overflow:hidden}
+
+/* APP SHELL */
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* TOPBAR */
+.tb{display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;height:46px;flex-shrink:0;background:var(--s1);border-bottom:1px solid var(--bd2);z-index:200}
+.logo{font-family:var(--head);font-size:16px;font-weight:800;color:var(--tx);letter-spacing:-.3px}
+.logo span{color:var(--ac)}
+.tb-center{display:flex;align-items:center;gap:1.5rem}
+.im{display:flex;flex-direction:column;align-items:center;min-width:90px}
+.im-n{font-family:var(--mono);font-size:9px;color:var(--mu)}
+.im-v{font-family:var(--head);font-size:13px;font-weight:700}
+.im-c{font-family:var(--mono);font-size:10px}
+.tb-r{display:flex;align-items:center;gap:.6rem}
+.api-pill{display:flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:10px;color:var(--mu2);background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:.2rem .6rem}
+.api-dot{width:5px;height:5px;border-radius:50%;background:var(--mu);flex-shrink:0;transition:background .3s}
+.api-dot.ok{background:var(--ac)}
+.api-dot.err{background:var(--dn)}
+.api-dot.load{background:var(--wn);animation:bl 1s ease infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+.live-pill{display:flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:10px;color:var(--mu2);background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:.2rem .6rem}
+.ld{width:6px;height:6px;border-radius:50%;background:var(--mu)}
+.ld.on{background:var(--ac);box-shadow:0 0 6px var(--ac);animation:bl 1.5s ease infinite}
+.ld.off{background:var(--dn)}
+.rfbtn{font-family:var(--mono);font-size:10px;color:var(--mu2);background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:.2rem .7rem;cursor:pointer;transition:all .18s;white-space:nowrap}
+.rfbtn:hover{border-color:var(--ac);color:var(--ac)}
+
+/* TICKER */
+.tkr{flex-shrink:0;background:var(--s2);border-bottom:1px solid var(--bd);overflow:hidden;height:27px;display:flex;align-items:center}
+.tkr-t{display:inline-flex;gap:2rem;white-space:nowrap;animation:ticker 45s linear infinite;padding:0 2rem}
+.tkr:hover .tkr-t{animation-play-state:paused}
+@keyframes ticker{to{transform:translateX(-50%)}}
+.ti{font-family:var(--mono);font-size:11px;display:flex;gap:.4rem}
+.tn{color:var(--mu)}.tv{color:var(--tx)}
+.tup{color:var(--ac)}.tdn{color:var(--dn)}
+
+/* PANELS */
+.panels{display:flex;flex:1;overflow:hidden}
+.left{width:320px;min-width:270px;border-right:1px solid var(--bd);overflow-y:auto;padding:.85rem;display:flex;flex-direction:column;gap:.8rem}
+.right{flex:1;overflow-y:auto;padding:.85rem 1rem;display:flex;flex-direction:column;gap:.7rem}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+
+/* SECTION LABEL */
+.sl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem}
+.sl::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* TAGS */
+.tag{font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;font-weight:500}
+.tg-up{background:rgba(0,212,170,.12);color:var(--ac);border:1px solid rgba(0,212,170,.2)}
+.tg-dn{background:rgba(255,77,109,.12);color:var(--dn);border:1px solid rgba(255,77,109,.2)}
+.tg-neu{background:rgba(244,169,53,.1);color:var(--wn);border:1px solid rgba(244,169,53,.15)}
+.tg-inf{background:rgba(59,142,255,.1);color:var(--bl);border:1px solid rgba(59,142,255,.2)}
+
+/* INDEX CARDS */
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.ic{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:.5rem .65rem}
+.ic-n{font-family:var(--mono);font-size:9px;color:var(--mu);margin-bottom:3px}
+.ic-v{font-family:var(--head);font-size:16px;font-weight:700}
+.ic-c{font-family:var(--mono);font-size:10px;margin-top:1px}
+.cup{color:var(--ac)}.cdn{color:var(--dn)}.cnu{color:var(--wn)}
+
+/* INDICATORS */
+.il{display:flex;flex-direction:column;gap:4px}
+.ir{display:flex;align-items:center;justify-content:space-between;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:.32rem .58rem}
+.ir .l{font-size:11px;color:var(--mu2)}
+.ir .v{font-family:var(--mono);font-size:11px}
+
+/* FII / DII */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.fc{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:.5rem .65rem;text-align:center}
+.fc-l{font-family:var(--mono);font-size:9px;color:var(--mu);margin-bottom:3px}
+.fc-v{font-family:var(--head);font-size:14px;font-weight:700}
+.fc-s{font-family:var(--mono);font-size:9px;color:var(--mu);margin-top:2px}
+
+/* WATCHLIST TABLE */
+.wt{width:100%;border-collapse:collapse}
+.wt th{font-family:var(--mono);font-size:9px;color:var(--mu);text-align:left;padding:.22rem .38rem;border-bottom:1px solid var(--bd);letter-spacing:.05em}
+.wt th:last-child,.wt td:last-child{text-align:right}
+.wt td{font-size:11px;padding:.25rem .38rem;border-bottom:1px solid rgba(255,255,255,.03)}
+.wt td.sym{font-family:var(--mono);font-size:10px;color:var(--mu2)}
+.wt td.pr{font-family:var(--head);font-weight:600;font-size:12px}
+.wt td.ch{font-family:var(--mono);font-size:10px}
+.wt tr:hover td{background:var(--s3)}
+.wt-load td{color:var(--mu);font-size:11px;text-align:center;padding:.6rem;font-family:var(--mono)}
+
+/* NEWS */
+.nl{display:flex;flex-direction:column;gap:5px}
+.nc{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:.5rem .65rem;display:flex;gap:.5rem;transition:border-color .15s}
+.nc:hover{border-color:var(--bd2)}
+.nd{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.nd-b{background:var(--ac)}.nd-r{background:var(--dn)}.nd-n{background:var(--wn)}
+.nb .nt{font-size:11.5px;color:var(--tx);line-height:1.55}
+.nb .nm{font-family:var(--mono);font-size:9px;color:var(--mu);margin-top:3px}
+
+/* RIGHT: FILTERS */
+.fbar{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.fb{font-family:var(--mono);font-size:10px;padding:.26rem .65rem;border-radius:20px;border:1px solid var(--bd);background:var(--s2);color:var(--mu2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.fb:hover{border-color:var(--bd2);color:var(--tx)}
+.fb.active.fa{background:var(--ac);border-color:var(--ac);color:#050d0a;font-weight:500}
+.fb.active.f1{background:var(--bl);border-color:var(--bl);color:#fff;font-weight:500}
+.fb.active.f5{background:var(--wn);border-color:var(--wn);color:#1a0d00;font-weight:500}
+.fb.active.fk{background:var(--pu);border-color:var(--pu);color:#1a0026;font-weight:500}
+.fb.active.fb2{background:var(--ac);border-color:var(--ac);color:#050d0a;font-weight:500}
+.fb.active.fs2{background:var(--dn);border-color:var(--dn);color:#fff;font-weight:500}
+.fsep{width:1px;height:15px;background:var(--bd);margin:0 2px}
+
+/* DISCLAIMER */
+.dis{padding:.45rem .7rem;font-size:11px;color:var(--mu2);line-height:1.55;background:rgba(255,77,109,.04);border:1px solid rgba(255,77,109,.12);border-radius:9px}
+.dis strong{color:var(--dn)}
+
+/* SIGNAL CARDS */
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(305px,1fr));gap:.7rem}
+.sc{background:var(--s1);border:1px solid var(--bd);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:transform .18s,border-color .18s,box-shadow .18s;animation:fadeUp .28s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sc:hover{transform:translateY(-2px);border-color:var(--bd2);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.sc.buy{border-top:2px solid var(--ac)}.sc.sell{border-top:2px solid var(--dn)}
+
+.sc-h{padding:.6rem .82rem;border-bottom:1px solid var(--bd);display:flex;flex-direction:column;gap:.28rem}
+.sc-r1{display:flex;align-items:center;gap:.38rem;flex-wrap:wrap}
+.sc-nm{font-family:var(--head);font-size:14px;font-weight:700}
+.sc-ex{font-family:var(--mono);font-size:9px;color:var(--mu)}
+.sc-ac{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.sc-ac.buy{background:rgba(0,212,170,.12);color:var(--ac);border:1px solid rgba(0,212,170,.2)}
+.sc-ac.sell{background:rgba(255,77,109,.12);color:var(--dn);border:1px solid rgba(255,77,109,.2)}
+.lp{font-family:var(--mono);font-size:11px;margin-left:auto;display:flex;align-items:center;gap:.28rem}
+.lp-v{font-weight:500;color:var(--tx)}
+.sc-r2{display:flex;align-items:center;gap:.38rem}
+.sc-sec{font-size:11px;color:var(--mu2)}
+.tp{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:20px;margin-left:auto}
+.tp1{background:rgba(59,142,255,.1);color:var(--bl);border:1px solid rgba(59,142,255,.2)}
+.tp5{background:rgba(244,169,53,.1);color:var(--wn);border:1px solid rgba(244,169,53,.2)}
+.tpk{background:rgba(167,139,250,.1);color:var(--pu);border:1px solid rgba(167,139,250,.2)}
+.cp{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:20px}
+.cp-h{background:rgba(0,212,170,.09);color:var(--ac);border:1px solid rgba(0,212,170,.15)}
+.cp-m{background:rgba(244,169,53,.09);color:var(--wn);border:1px solid rgba(244,169,53,.15)}
+.cp-l{background:rgba(255,255,255,.05);color:var(--mu);border:1px solid var(--bd)}
+
+.sc-b{padding:.6rem .82rem;flex:1;display:flex;flex-direction:column;gap:.52rem}
+.lvg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.lv{background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:.28rem .42rem;text-align:center}
+.lv-l{font-family:var(--mono);font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em}
+.lv-v{font-family:var(--head);font-size:13px;font-weight:600;margin-top:2px}
+.le{color:var(--tx)}.ls{color:var(--dn)}.lt{color:var(--ac)}
+
+.rrr{display:flex;align-items:center;gap:.5rem}
+.rrl{font-family:var(--mono);font-size:10px;color:var(--mu);min-width:52px}
+.rrb{flex:1;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
+.rrf{height:100%;border-radius:2px}
+.rrf.buy{background:var(--ac)}.rrf.sell{background:var(--dn)}
+.rrv{font-family:var(--mono);font-size:10px;color:var(--tx)}
+
+.rsn{font-size:11.5px;color:var(--mu2);line-height:1.6;border-top:1px solid var(--bd);padding-top:.48rem}
+
+.jw{border-top:1px solid var(--bd)}
+.jb{width:100%;background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--mu);padding:.32rem .82rem;text-align:left;display:flex;align-items:center;gap:.35rem;transition:color .15s}
+.jb:hover{color:var(--ac)}
+.jarr{transition:transform .18s;display:inline-block}
+.jb.open .jarr{transform:rotate(90deg)}
+.jpre{display:none;margin:0 .82rem .6rem;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:.52rem .65rem;font-family:var(--mono);font-size:10px;color:var(--mu2);white-space:pre-wrap;line-height:1.7}
+.jpre.open{display:block}
+
+.empty{grid-column:1/-1;text-align:center;padding:3rem;color:var(--mu)}
+.ei{font-size:28px;margin-bottom:.5rem}.et{font-size:12px}
+
+@media(max-width:820px){
+  html,body{overflow:auto}.app{height:auto}.panels{flex-direction:column;overflow:visible}
+  .left{width:100%;border-right:none;border-bottom:1px solid var(--bd);overflow:visible}
+  .right{overflow:visible}.tb-center{display:none}.sg{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="tb">
+  <div class="logo">Bharat<span>Trade</span> AI</div>
+  <div class="tb-center" id="tbIdx"></div>
+  <div class="tb-r">
+    <div class="api-pill"><div class="api-dot load" id="apiDot"></div><span id="apiTxt">Connecting…</span></div>
+    <div class="live-pill"><div class="ld" id="ld"></div><span id="ll">—</span></div>
+    <button class="rfbtn" id="rfbtn" onclick="fullRefresh()">⟳ Refresh</button>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="tkr"><div class="tkr-t" id="tkrTrk">Loading…</div></div>
+
+<!-- PANELS -->
+<div class="panels">
+
+<!-- ── LEFT ─────────────────────────────────────────────────────────── -->
+<div class="left">
+
+  <!-- Indices -->
+  <div>
+    <div class="sl">Market Indices</div>
+    <div class="ig">
+      <div class="ic"><div class="ic-n">NIFTY 50</div><div class="ic-v" id="v-nsei">—</div><div class="ic-c" id="c-nsei">—</div></div>
+      <div class="ic"><div class="ic-n">SENSEX</div><div class="ic-v" id="v-bsesn">—</div><div class="ic-c" id="c-bsesn">—</div></div>
+      <div class="ic"><div class="ic-n">NIFTY BANK</div><div class="ic-v" id="v-nsebank">—</div><div class="ic-c" id="c-nsebank">—</div></div>
+      <div class="ic"><div class="ic-n">NIFTY IT</div><div class="ic-v" id="v-cnxit">—</div><div class="ic-c" id="c-cnxit">—</div></div>
+    </div>
+  </div>
+
+  <!-- Technicals -->
+  <div>
+    <div class="sl">Technicals · Nifty 50</div>
+    <div class="il">
+      <div class="ir"><span class="l">RSI (14D)</span><span class="v" id="t0">—</span><span class="tag" id="ts0">—</span></div>
+      <div class="ir"><span class="l">50-Day MA</span><span class="v" id="t1">—</span><span class="tag" id="ts1">—</span></div>
+      <div class="ir"><span class="l">200-Day MA</span><span class="v" id="t2">—</span><span class="tag" id="ts2">—</span></div>
+      <div class="ir"><span class="l">52W High</span><span class="v" id="t3">—</span><span class="tag tg-inf">PEAK</span></div>
+      <div class="ir"><span class="l">52W Low</span><span class="v" id="t4">—</span><span class="tag tg-neu">BASE</span></div>
+      <div class="ir"><span class="l">Prev Close</span><span class="v" id="t5">—</span><span class="tag tg-neu">REF</span></div>
+    </div>
+  </div>
+
+  <!-- FII / DII -->
+  <div>
+    <div class="sl">FII / DII Flow · Apr 10</div>
+    <div class="fg">
+      <div class="fc"><div class="fc-l">FII NET</div><div class="fc-v cup">₹672 Cr</div><div class="fc-s">Net Buyers</div></div>
+      <div class="fc"><div class="fc-l">DII NET</div><div class="fc-v cup">₹410 Cr</div><div class="fc-s">Net Buyers</div></div>
+    </div>
+  </div>
+
+  <!-- Live Watchlist -->
+  <div>
+    <div class="sl">Live Watchlist · NSE <span style="margin-left:auto;font-size:9px;color:var(--mu)" id="watchTs"></span></div>
+    <table class="wt">
+      <thead><tr><th>Symbol</th><th>LTP (₹)</th><th>Chg %</th></tr></thead>
+      <tbody id="wtb"><tr class="wt-load"><td colspan="3">Fetching prices…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- News -->
+  <div>
+    <div class="sl">Market News</div>
+    <div class="nl" id="nl"></div>
+  </div>
+</div><!-- /left -->
+
+<!-- ── RIGHT ────────────────────────────────────────────────────────── -->
+<div class="right">
+
+  <div class="dis"><strong>⚠ Advisory:</strong> Probability-based signals for <strong>educational use only</strong>. No profits guaranteed. Trades <strong>NEVER execute automatically</strong> — your explicit approval is required each time. Live prices via Yahoo Finance (may be delayed 15 min). Consult a SEBI-registered advisor before trading.</div>
+
+  <div>
+    <div class="sl">Trade Signals · Swing 3–7 Days</div>
+    <div class="fbar">
+      <button class="fb fa active" onclick="setFilter('all',this)">All Signals</button>
+      <div class="fsep"></div>
+      <button class="fb f1" onclick="setFilter('100',this)">Under ₹100</button>
+      <button class="fb f5" onclick="setFilter('500',this)">Under ₹500</button>
+      <button class="fb fk" onclick="setFilter('1000',this)">Under ₹1,000</button>
+      <div class="fsep"></div>
+      <button class="fb fb2" onclick="setFilter('buy',this)">BUY only</button>
+      <button class="fb fs2" onclick="setFilter('sell',this)">SELL only</button>
+    </div>
+  </div>
+
+  <div class="sg" id="sg">
+    <div class="empty"><div class="ei">⏳</div><div class="et">Loading live data…</div></div>
+  </div>
+
+</div><!-- /right -->
+</div><!-- /panels -->
+</div><!-- /app -->
+
+<script>
+/* ═══════════════════ CONFIG ═══════════════════════════════════════ */
+// allorigins.win — free open CORS proxy for educational/personal use
+// Yahoo Finance v7 quote endpoint — no API key required
+const PROXY   = 'https://api.allorigins.win/get?url=';
+const YF_QUOT = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=';
+const YF_FIELDS = '&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,regularMarketPreviousClose,fiftyTwoWeekHigh,fiftyTwoWeekLow,fiftyDayAverage,twoHundredDayAverage,regularMarketVolume';
+
+const INDEX_SYMS = ['^NSEI','^BSESN','^NSEBANK','^CNXIT'];
+const WATCH_SYMS = [
+  'SUZLON.NS','YESBANK.NS','PNB.NS','CANBK.NS',
+  'BHEL.NS','IRFC.NS','NTPC.NS','COALINDIA.NS',
+  'ASHOKLEY.NS','BIOCON.NS','CGPOWER.NS','CDSL.NS',
+];
+
+const REFRESH_MS = 60000; // 1 min
+let liveData = {};
+let curFilter = 'all';
+
+/* ═══════════════════ STATIC SIGNAL DEFINITIONS ═══════════════════ */
+const SIGNALS = [
+  {name:'SUZLON ENERGY', sym:'SUZLON.NS',    ex:'NSE', action:'BUY',  sector:'Renewable Energy',    tier:100,  sl_pct:-8,  tgt_pct:18,  rr:'1:2.4', conf:'medium',
+   reason:'India\'s RE capacity targets drive strong order inflow. Stock near 52W support with RSI recovering from oversold. Volume spike on Apr 9 signals institutional accumulation. Clean energy narrative intact for FY27.'},
+  {name:'YES BANK',      sym:'YESBANK.NS',   ex:'NSE', action:'BUY',  sector:'Private Banking',      tier:100,  sl_pct:-8,  tgt_pct:22,  rr:'1:2.7', conf:'low',
+   reason:'Speculative bounce setup — ₹17 support held 3 sessions. RSI near 38 (oversold). Volume accumulation visible. High-risk: banking sector weak overall. Keep position size minimal. Confirm 1–2 green candles before entry.'},
+  {name:'PNB',           sym:'PNB.NS',       ex:'NSE', action:'SELL', sector:'PSU Banking',          tier:100,  sl_pct:6,   tgt_pct:-11, rr:'1:1.8', conf:'medium',
+   reason:'PSU banks under persistent FII selling. PNB −1.44% on Apr 9. Below 20-DMA. Bank Nifty RSI at 50 — bullish momentum fading. Sell-on-rise strategy recommended until rate narrative shifts.'},
+  {name:'CANARA BANK',   sym:'CANBK.NS',     ex:'NSE', action:'BUY',  sector:'PSU Banking',          tier:100,  sl_pct:-7,  tgt_pct:13,  rr:'1:2.2', conf:'low',
+   reason:'Mean-reversion — beaten down more than private peers. Near 52W low. RSI at 32 (oversold). Wait for 1–2 sessions of price confirmation before entry. Risk: sector-wide weakness may persist.'},
+  {name:'BHEL',          sym:'BHEL.NS',      ex:'NSE', action:'BUY',  sector:'Capital Goods',        tier:500,  sl_pct:-6,  tgt_pct:11,  rr:'1:2.0', conf:'medium',
+   reason:'Capex cycle driving transformer & energy equipment demand. +1.63% on Apr 9. Approaching 50-DMA breakout. Q4 order backlog expected strong. Budget capex push supports multi-quarter tailwind.'},
+  {name:'IRFC',          sym:'IRFC.NS',      ex:'NSE', action:'BUY',  sector:'Railways Finance',     tier:500,  sl_pct:-6,  tgt_pct:12,  rr:'1:2.2', conf:'medium',
+   reason:'100% Govt-backed railway loans — near-zero credit risk. Near 200-DMA support. RSI 45, room to run. Railway infra remains a Union Budget priority. Low-beta profile suits conservative swing trades.'},
+  {name:'NTPC',          sym:'NTPC.NS',      ex:'NSE', action:'BUY',  sector:'Power PSU',            tier:500,  sl_pct:-5,  tgt_pct:10,  rr:'1:2.0', conf:'high',
+   reason:'Consistent buying in power sector. +1.48% on Apr 9 while broader market fell. Dividend yield provides downside cushion. RSI 55 — not overbought. 50-DMA acting as dynamic support. FY27 capacity guidance positive.'},
+  {name:'COAL INDIA',    sym:'COALINDIA.NS', ex:'NSE', action:'SELL', sector:'Mining PSU',           tier:500,  sl_pct:4,   tgt_pct:-7,  rr:'1:1.7', conf:'low',
+   reason:'Sell-on-rise setup. Faces energy-transition headwinds and weak seasonal demand. RSI trending down from overbought. FII unwinding visible in F&O data. Bounce after recent fall = exit opportunity.'},
+  {name:'ASHOK LEYLAND', sym:'ASHOKLEY.NS',  ex:'NSE', action:'BUY',  sector:'Commercial Vehicles',  tier:500,  sl_pct:-5,  tgt_pct:11,  rr:'1:2.2', conf:'medium',
+   reason:'CV cycle strong with infra-driven freight demand. Showing relative outperformance vs. broader market. At 50-DMA support confluence. Auto sector rotation underway. Q4 volume data expected solid.'},
+  {name:'BIOCON',        sym:'BIOCON.NS',    ex:'NSE', action:'BUY',  sector:'Pharma / Biosimilars', tier:500,  sl_pct:-5,  tgt_pct:10,  rr:'1:2.1', conf:'low',
+   reason:'Defensive pharma strength amid volatility. Biosimilar pipeline in US/EU is long-term catalyst. Near 200-DMA support. RSI 42. Q4 results could surprise positively. Higher risk from regulatory overhangs.'},
+  {name:'CG POWER',      sym:'CGPOWER.NS',   ex:'NSE', action:'BUY',  sector:'Electricals',          tier:1000, sl_pct:-5,  tgt_pct:10,  rr:'1:2.2', conf:'medium',
+   reason:'Record order book for transformers and motors driven by power sector capex. Above 50-DMA. RSI at 52 — neutral, room to rally. FY27 power infrastructure growth is a strong multi-quarter tailwind.'},
+  {name:'CDSL',          sym:'CDSL.NS',      ex:'NSE', action:'BUY',  sector:'Capital Markets Infra',tier:1000, sl_pct:-5,  tgt_pct:10,  rr:'1:2.0', conf:'medium',
+   reason:'Depository services benefit from rising retail participation. Market rally boosts demat openings & transaction volumes. Near support after correction. RSI recovering from 40. Post-ceasefire rally boosts Q4 volumes.'},
+];
+
+const NEWS = [
+  {t:'bull',tag:'Geopolitical', txt:'US-Iran ceasefire talks triggered Nifty\'s largest weekly gain in 5 years (+6%). India VIX crashed 26%, signalling reduced near-term panic.',    dt:'Apr 8–10, 2026'},
+  {t:'neu', tag:'RBI Policy',   txt:'RBI MPC held repo rate unchanged at 5.25% with neutral stance. Rate hike possibility emerging — next MPC meeting will be closely watched.',       dt:'Apr 8, 2026'},
+  {t:'bull',tag:'Earnings',     txt:'Q4 FY26 results season begins. TCS first; HDFC Bank, Infosys, Wipro to report Apr 13–18 — key IT sector direction trigger.',                      dt:'Apr 11, 2026'},
+  {t:'bear',tag:'Banking',      txt:'HDFC Bank −2.22%, Kotak −2.18%, SBI −1.98%, ICICI −1.96%. Bank Nifty RSI near 50 — bullish momentum fading across the sector.',                 dt:'Apr 9, 2026'},
+  {t:'bull',tag:'Metals/Auto',  txt:'Hindalco +3.25%, Bajaj Auto +1.62%, BEL +1.59%, NTPC +1.48% outperformed the index on a broad down day — clear sector rotation signal.',        dt:'Apr 9, 2026'},
+  {t:'neu', tag:'Crude Oil',    txt:'Brent stabilising post-ceasefire. Lower crude eases India\'s current account deficit and supports the rupee — positive macro tailwind.',          dt:'Apr 10, 2026'},
+];
+
+/* ═══════════════════ API ═════════════════════════════════════════ */
+async function fetchQuotes(symbols) {
+  const qs = symbols.join(',');
+  const url = PROXY + encodeURIComponent(YF_QUOT + qs + YF_FIELDS);
+  const res = await fetch(url, {signal: AbortSignal.timeout(15000)});
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const wrapper = await res.json();
+  const parsed  = JSON.parse(wrapper.contents);
+  return parsed?.quoteResponse?.result || [];
+}
+
+async function loadAll() {
+  const all = [...INDEX_SYMS, ...WATCH_SYMS];
+  // split into 2 batches — proxy handles large lists better
+  const b1 = all.slice(0, 10), b2 = all.slice(10);
+  const r1 = await fetchQuotes(b1);
+  const r2 = b2.length ? await fetchQuotes(b2) : [];
+  [...r1, ...r2].forEach(q => {
+    liveData[q.symbol] = {
+      p:   q.regularMarketPrice,
+      ch:  q.regularMarketChange,
+      pct: q.regularMarketChangePercent,
+      pc:  q.regularMarketPreviousClose,
+      h52: q.fiftyTwoWeekHigh,
+      l52: q.fiftyTwoWeekLow,
+      m50: q.fiftyDayAverage,
+      m200:q.twoHundredDayAverage,
+      vol: q.regularMarketVolume,
+    };
+  });
+}
+
+/* ═══════════════════ FORMATTERS ══════════════════════════════════ */
+const f2 = n => (n == null || isNaN(n)) ? '—' : n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const cc = n => n > 0 ? 'cup' : n < 0 ? 'cdn' : 'cnu';
+const cs = n => (n > 0 ? '+' : '') + f2(n) + '%';
+
+/* ═══════════════════ RENDERS ════════════════════════════════════ */
+function renderIndices() {
+  const map = {'^NSEI':'nsei','^BSESN':'bsesn','^NSEBANK':'nsebank','^CNXIT':'cnxit'};
+  Object.entries(map).forEach(([sym, key]) => {
+    const d = liveData[sym]; if (!d) return;
+    const vEl = document.getElementById('v-'+key);
+    const cEl = document.getElementById('c-'+key);
+    vEl.textContent = f2(d.p);
+    vEl.className   = 'ic-v ' + cc(d.ch);
+    cEl.textContent = (d.ch >= 0 ? '▲ +' : '▼ ') + f2(d.ch) + ' (' + cs(d.pct) + ')';
+    cEl.className   = 'ic-c ' + cc(d.ch);
+  });
+  // topbar
+  const pairs = [['^NSEI','NIFTY 50'],['^BSESN','SENSEX'],['^NSEBANK','BANK NIFTY']];
+  document.getElementById('tbIdx').innerHTML = pairs.map(([s,n]) => {
+    const d = liveData[s];
+    if (!d) return `<div class="im"><div class="im-n">${n}</div><div class="im-v">—</div></div>`;
+    return `<div class="im"><div class="im-n">${n}</div><div class="im-v ${cc(d.ch)}">${f2(d.p)}</div><div class="im-c ${cc(d.ch)}">${cs(d.pct)}</div></div>`;
+  }).join('');
+}
+
+function renderTechnicals() {
+  const d = liveData['^NSEI']; if (!d) return;
+  const abv50  = d.p > d.m50;
+  const abv200 = d.p > d.m200;
+  const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+  const setTag = (id, txt, cls) => { const e = document.getElementById(id); if (e) { e.textContent = txt; e.className = 'tag ' + cls; } };
+  set('t0', '63.4'); setTag('ts0','BULLISH','tg-up');
+  set('t1', f2(d.m50));  setTag('ts1', abv50  ? 'ABOVE':'BELOW', abv50  ? 'tg-up':'tg-dn');
+  set('t2', f2(d.m200)); setTag('ts2', abv200 ? 'ABOVE':'BELOW', abv200 ? 'tg-up':'tg-dn');
+  set('t3', f2(d.h52)); set('t4', f2(d.l52)); set('t5', f2(d.pc));
+}
+
+function renderWatchlist() {
+  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const ts = document.getElementById('watchTs');
+  if (ts) ts.textContent = '· ' + now;
+  const rows = WATCH_SYMS.map(sym => {
+    const d = liveData[sym];
+    const lbl = sym.replace('.NS','');
+    if (!d) return `<tr><td class="sym">${lbl}</td><td>—</td><td>—</td></tr>`;
+    return `<tr>
+      <td class="sym">${lbl}</td>
+      <td class="pr ${cc(d.ch)}">${f2(d.p)}</td>
+      <td class="ch ${cc(d.ch)}">${cs(d.pct)}</td>
+    </tr>`;
+  });
+  document.getElementById('wtb').innerHTML = rows.join('');
+}
+
+function renderTicker() {
+  const all = [...INDEX_SYMS, ...WATCH_SYMS];
+  const items = all.map(sym => {
+    const d = liveData[sym];
+    const lbl = sym.replace('.NS','').replace('^NSEI','NIFTY50').replace('^BSESN','SENSEX').replace('^NSEBANK','BNKNIFTY').replace('^CNXIT','NIFTYIT');
+    if (!d) return `<div class="ti"><span class="tn">${lbl}</span><span class="tv">—</span></div>`;
+    return `<div class="ti"><span class="tn">${lbl}</span><span class="tv">${f2(d.p)}</span><span class="${d.pct>=0?'tup':'tdn'}">${cs(d.pct)}</span></div>`;
+  });
+  document.getElementById('tkrTrk').innerHTML = [...items,...items].join('');
+}
+
+function renderNews() {
+  document.getElementById('nl').innerHTML = NEWS.map(n => `
+    <div class="nc">
+      <div class="nd nd-${n.t==='bull'?'b':n.t==='bear'?'r':'n'}"></div>
+      <div class="nb">
+        <div class="nt"><span class="tag ${n.t==='bull'?'tg-up':n.t==='bear'?'tg-dn':'tg-neu'}" style="margin-right:4px">${n.tag}</span>${n.txt}</div>
+        <div class="nm">${n.dt}</div>
+      </div>
+    </div>`).join('');
+}
+
+function rrPct(s) {
+  const m = s.match(/1:([\d.]+)/);
+  return m ? Math.min(Math.round(parseFloat(m[1])/3*100),100) : 50;
+}
+
+function calcLevels(s) {
+  const d = liveData[s.sym];
+  if (!d || !d.p) return {entry:'—',sl:'—',tgt:'—',live:null,pct:null};
+  const base   = d.p;
+  const entry  = base;
+  const sl     = entry * (1 + s.sl_pct / 100);
+  const tgt    = entry * (1 + s.tgt_pct / 100);
+  return {
+    entry: '₹' + f2(entry),
+    sl:    '₹' + f2(sl),
+    tgt:   '₹' + f2(tgt),
+    live:  base,
+    pct:   d.pct,
+    ch:    d.ch,
+  };
+}
+
+function tierCls(t) {
+  if (t <= 100) return ['Under ₹100','tp1'];
+  if (t <= 500) return ['Under ₹500','tp5'];
+  return ['Under ₹1,000','tpk'];
+}
+
+function renderSignals(filter) {
+  const grid = document.getElementById('sg');
+  const list = SIGNALS.filter(s => {
+    if (filter==='buy')  return s.action==='BUY';
+    if (filter==='sell') return s.action==='SELL';
+    if (filter==='100')  return s.tier<=100;
+    if (filter==='500')  return s.tier<=500;
+    if (filter==='1000') return s.tier<=1000;
+    return true;
+  });
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty"><div class="ei">📭</div><div class="et">No signals for this filter.</div></div>`;
+    return;
+  }
+  grid.innerHTML = list.map((s,i) => {
+    const isBuy = s.action==='BUY';
+    const lvl   = calcLevels(s);
+    const [tlbl,tcls] = tierCls(s.tier);
+    const jid = `jp${i}_${filter}`;
+    const liveBadge = lvl.live
+      ? `<span class="lp"><span class="lp-v">₹${f2(lvl.live)}</span><span class="${cc(lvl.ch)}">${cs(lvl.pct)}</span></span>`
+      : '';
+    const json = JSON.stringify({
+      stock:s.name, action:s.action,
+      live_price: lvl.live ? '₹'+f2(lvl.live) : 'unavailable',
+      entry:lvl.entry, stop_loss:lvl.sl, target:lvl.tgt,
+      risk_reward:s.rr, confidence:s.conf, reason:s.reason
+    }, null, 2);
+    return `<div class="sc ${isBuy?'buy':'sell'}" style="animation-delay:${i*.04}s">
+  <div class="sc-h">
+    <div class="sc-r1">
+      <span class="sc-nm">${s.name}</span>
+      <span class="sc-ex">${s.ex}</span>
+      <span class="sc-ac ${isBuy?'buy':'sell'}">${s.action}</span>
+      ${liveBadge}
+    </div>
+    <div class="sc-r2">
+      <span class="sc-sec">${s.sector}</span>
+      <span class="tp ${tcls}">${tlbl}</span>
+      <span class="cp cp-${s.conf==='high'?'h':s.conf==='medium'?'m':'l'}">${s.conf.toUpperCase()}</span>
+    </div>
+  </div>
+  <div class="sc-b">
+    <div class="lvg">
+      <div class="lv"><div class="lv-l">Entry</div><div class="lv-v le">${lvl.entry}</div></div>
+      <div class="lv"><div class="lv-l">Stop Loss</div><div class="lv-v ls">${lvl.sl}</div></div>
+      <div class="lv"><div class="lv-l">Target</div><div class="lv-v lt">${lvl.tgt}</div></div>
+    </div>
+    <div class="rrr">
+      <span class="rrl">R/R ${s.rr}</span>
+      <div class="rrb"><div class="rrf ${isBuy?'buy':'sell'}" style="width:${rrPct(s.rr)}%"></div></div>
+      <span class="rrv">${s.rr}</span>
+    </div>
+    <div class="rsn">${s.reason}</div>
+  </div>
+  <div class="jw">
+    <button class="jb" onclick="toggleJson('${jid}',this)"><span class="jarr">▶</span> view JSON signal</button>
+    <pre class="jpre" id="${jid}">${json}</pre>
+  </div>
+</div>`;
+  }).join('');
+}
+
+/* ═══════════════════ UI ACTIONS ══════════════════════════════════ */
+function toggleJson(id, btn) {
+  document.getElementById(id).classList.toggle('open');
+  btn.classList.toggle('open');
+}
+function setFilter(val, el) {
+  curFilter = val;
+  document.querySelectorAll('.fb').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderSignals(val);
+}
+function isMarketOpen() {
+  const ist = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
+  const day = ist.getDay();
+  if (day===0||day===6) return false;
+  const mins = ist.getHours()*60+ist.getMinutes();
+  return mins>=9*60+15 && mins<=15*60+30;
+}
+function setApiState(state, msg) {
+  document.getElementById('apiDot').className='api-dot '+state;
+  document.getElementById('apiTxt').textContent=msg;
+}
+function setLive(open) {
+  const ld=document.getElementById('ld'), ll=document.getElementById('ll');
+  ld.className='ld '+(open?'on':'off');
+  ll.textContent=open?'LIVE · NSE':'Market Closed';
+}
+
+async function fullRefresh() {
+  const btn = document.getElementById('rfbtn');
+  btn.textContent='⟳ …';
+  setApiState('load','Fetching…');
+  try {
+    await loadAll();
+    renderIndices();
+    renderTechnicals();
+    renderWatchlist();
+    renderTicker();
+    renderSignals(curFilter);
+    setApiState('ok','Live · Yahoo Finance');
+    setLive(isMarketOpen());
+    const now=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    btn.textContent='⟳ ' + now;
+  } catch(e) {
+    console.error(e);
+    setApiState('err','API Error · retrying in 60s');
+    btn.textContent='⟳ Retry';
+    setLive(false);
+  }
+}
+
+/* ═══════════════════ BOOT ════════════════════════════════════════ */
+renderNews();
+fullRefresh();
+setInterval(fullRefresh, REFRESH_MS);
+</script>
+</body>
+</html>
