@@ -13,7 +13,7 @@ RUN:
 Then in the trading dashboard:
   - Click ⚙ Config
   - Select "NSE Proxy (local server, real-time)"
-  - Proxy URL: http://localhost:8000
+  - Proxy URL: http://localhost:5000
   - Save & Connect
 """
 
@@ -311,7 +311,7 @@ if __name__ == '__main__':
     print('=' * 70)
     print('  BharatTrade AI — NSE Proxy Server (v2)')
     print('  Real-time prices from NSE India + Yahoo fallback')
-    print('  Running on http://localhost:8000')
+    print('  Running on http://localhost:5000')
     print('=' * 70)
     print()
     print('  Endpoints:')
@@ -319,15 +319,15 @@ if __name__ == '__main__':
     print('    /quotes?symbols=SUZLON,PNB      — fetch stock quotes')
     print('    /screener/under100?limit=15     — stocks under ₹100')
     print()
-    print('  Dashboard: ⚙ Config → NSE Proxy → http://localhost:8000 → Save')
+    print('  Dashboard: ⚙ Config → NSE Proxy → http://localhost:5000 → Save')
     print()
     print('  If NSE API fails, Yahoo fallback activates automatically (~15 min delay)')
     print()
     
     try:
-        app.run(host='0.0.0.0', port=8000, debug=False, threaded=True)
+        app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
     except OSError as e:
         if 'Address already in use' in str(e):
-            print('❌ Port 8000 in use. Kill existing process or use port 8001')
+            print('❌ Port 5000 in use. Kill existing process or use port 5001')
         else:
             print(f'Error: {e}')
