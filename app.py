@@ -29,7 +29,7 @@ warnings.filterwarnings("ignore")
 
 # ─── PAGE CONFIG ─────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="BharatTrade AI",
+    page_title="TradingGenie AI",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -154,7 +154,7 @@ STOCK_UNIVERSE = [
     ("CGPOWER.NS",    "CG Power",         "Electricals"),
     ("CDSL.NS",       "CDSL",            "Capital Markets"),
     ("DIXON.NS",      "Dixon Tech",       "Electronics"),
-    ("ZOMATO.NS",     "Zomato",           "Food Tech"),        # Symbol verified
+
 ]
 
 RSS_FEEDS = [
