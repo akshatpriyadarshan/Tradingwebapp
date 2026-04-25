@@ -41,10 +41,12 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@500;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 :root{--bg:#07090f;--s1:#0d1520;--s2:#111827;--s3:#1a2535;--bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.16);--tx:#dde8f8;--mu:#4e6a8a;--mu2:#7a9bc0;--ac:#00d4aa;--bl:#3b8eff;--dn:#ff4d6d;--wn:#f4a935;--pu:#a78bfa;}
 .stApp{background:var(--bg)!important;color:var(--tx)!important;font-family:'DM Sans',sans-serif;}
-.stApp>header{display:none!important;}
+.stApp>header{display:True!important;}
 [data-testid="stToolbar"]{display:none!important;}
 [data-testid="stSidebar"]{background:var(--s1)!important;}
-.block-container{padding:0!important;max-width:100%!important;}
+.block-container{padding:0!important;max-width:100%!important;background:transparent!important;}
+.st-emotion-cache-1up3yna,.appview-container,.main,.stApp>section{background:transparent!important;}
+[data-testid="stAppViewBlockContainer"]{background:transparent!important;padding:0!important;}
 footer{display:none!important;}
 .stTabs [data-baseweb="tab-list"]{background:var(--s1)!important;border-bottom:1px solid var(--bd)!important;padding:0 1rem!important;}
 .stTabs [data-baseweb="tab"]{background:transparent!important;color:var(--mu)!important;font-family:'DM Mono',monospace!important;font-size:12px!important;padding:.5rem 1.2rem!important;border-radius:6px 6px 0 0!important;border:1px solid transparent!important;}
@@ -859,7 +861,7 @@ def render_header():
         <div style="width:32px;height:32px;background:#00d4aa;border-radius:8px;
              display:flex;align-items:center;justify-content:center;
              font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:#07090f">TG</div>
-        <span class="logo">Bharat<span>Trade</span> AI</span>
+        <span class="logo">Trading<span>Genie</span> AI</span>
       </div>
       <div style="display:flex;align-items:center;gap:14px">
         {badge}
@@ -1153,7 +1155,7 @@ def tab_charts():
                     df_ind = pd.DataFrame()
                     sigs   = []
             fig = build_intraday_chart(sym, sigs)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
             if sigs:
                 buys  = [s for s in sigs if s["type"]=="BUY"]
@@ -1194,7 +1196,7 @@ def tab_charts():
                 sig_rows = [{"Time":s["ts"].strftime("%H:%M") if hasattr(s["ts"],"strftime") else str(s["ts"]),
                               "Signal":s["type"],"Pattern":s["pattern"],"Price":fp(s["price"])}
                             for s in sigs[-15:]][::-1]
-                st.dataframe(pd.DataFrame(sig_rows), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(sig_rows), width='stretch', hide_index=True)
 
             elif not df_raw.empty:
                 st.info("No signals detected in today's data. Market may be pre-open or data is insufficient for pattern detection.")
@@ -1221,7 +1223,7 @@ def tab_charts():
         else:  # Swing chart
             with st.spinner(f"Loading daily chart for {sym_short}…"):
                 fig = build_swing_chart(sym)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
             df_s = fetch_history(sym, "3mo")
             if not df_s.empty:
