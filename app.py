@@ -388,12 +388,12 @@ def render_auth_page():
 
         tc1, tc2 = st.columns(2)
         with tc1:
-            if st.button("Sign In", key="to_login", use_container_width=True):
+            if st.button("Sign In", key="to_login", width='content'):
                 st.session_state["auth_mode"] = "login"
                 st.session_state["login_step"] = 1
                 st.rerun()
         with tc2:
-            if st.button("Create Account", key="to_signup", use_container_width=True):
+            if st.button("Create Account", key="to_signup", width='content'):
                 st.session_state["auth_mode"] = "signup"
                 st.session_state["signup_step"] = 1
                 st.rerun()
@@ -431,7 +431,7 @@ def _render_signup(_col):
                                    value=data.get("email",""))
             email2 = st.text_input("Confirm Email", placeholder="Re-enter email address",
                                    value=data.get("email2",""))
-            submitted = st.form_submit_button("Continue →", use_container_width=True)
+            submitted = st.form_submit_button("Continue →", width='content')
 
         if submitted:
             errors = []
@@ -465,7 +465,7 @@ def _render_signup(_col):
                 mobile = st.text_input("Mobile Number",
                                        placeholder="+91 98765 43210",
                                        value=data.get("mobile",""))
-                send = st.form_submit_button("Send OTP →", use_container_width=True)
+                send = st.form_submit_button("Send OTP →", width='content')
 
             if send:
                 ok_m, result = _validate_mobile(mobile)
@@ -493,7 +493,7 @@ def _render_signup(_col):
             with st.form("signup_s2b"):
                 otp_input = st.text_input("Enter OTP", placeholder="6-digit code",
                                           max_chars=6)
-                verify = st.form_submit_button("Verify OTP →", use_container_width=True)
+                verify = st.form_submit_button("Verify OTP →", width='content')
 
             if verify:
                 ok, msg = _verify_otp(mobile, otp_input, "signup")
@@ -528,7 +528,7 @@ def _render_signup(_col):
         with st.form("signup_s3"):
             pw1 = st.text_input("Password", type="password", placeholder="Create a strong password")
             pw2 = st.text_input("Confirm Password", type="password", placeholder="Re-enter password")
-            create = st.form_submit_button("Create Account ✓", use_container_width=True)
+            create = st.form_submit_button("Create Account ✓", width='content')
 
         if create:
             errors = []
@@ -582,7 +582,7 @@ def _render_login(_col):
                 ["Password", "OTP (One-Time Password)"],
                 horizontal=True,
             )
-            proceed = st.form_submit_button("Continue →", use_container_width=True)
+            proceed = st.form_submit_button("Continue →", width='content')
 
         if proceed:
             ident = identifier.strip()
@@ -647,7 +647,7 @@ def _render_login(_col):
 
             with st.form("login_otp"):
                 otp_in = st.text_input("Enter OTP", placeholder="6-digit code", max_chars=6)
-                verify = st.form_submit_button("Sign In →", use_container_width=True)
+                verify = st.form_submit_button("Sign In →", width='content')
 
             if verify:
                 ok, msg = _verify_otp(ident, otp_in, "login")
@@ -675,7 +675,7 @@ def _render_login(_col):
             st.markdown(f"**Welcome back, {user.get('name','').split()[0]}!**")
             with st.form("login_pw"):
                 pw = st.text_input("Password", type="password", placeholder="Your password")
-                signin = st.form_submit_button("Sign In →", use_container_width=True)
+                signin = st.form_submit_button("Sign In →", width='content')
 
             if signin:
                 if _hash_pw(pw) != user.get("password_hash",""):
@@ -694,7 +694,7 @@ st.set_page_config(
     page_title="TradingGenie AI",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ─── CSS ─────────────────────────────────────────────────────────────────────
@@ -705,7 +705,7 @@ st.markdown("""
 .stApp{background:var(--bg)!important;color:var(--tx)!important;font-family:'DM Sans',sans-serif;}
 .stApp>header{display:True!important;}
 [data-testid="stToolbar"]{display:none!important;}
-[data-testid="stSidebar"]{background:var(--s1)!important;}
+[data-testid="stSidebar"]{background:var(--s1)!important;border-right:1px solid var(--bd)!important;}[data-testid="stSidebar"] .stButton>button{width:100%!important;border-radius:8px!important;background:rgba(255,77,109,.08)!important;color:#ff4d6d!important;border:1px solid rgba(255,77,109,.2)!important;font-size:12px!important;padding:.5rem!important;}[data-testid="stSidebar"] .stButton>button:hover{background:rgba(255,77,109,.18)!important;}[data-testid="stSidebarContent"]{padding:1rem .75rem!important;}[data-testid="collapsedControl"]{display:none!important;}
 .stTabs [data-baseweb="tab-list"]{background:var(--s1)!important;border-bottom:1px solid var(--bd)!important;padding:0 1rem!important;}
 .stTabs [data-baseweb="tab"]{background:transparent!important;color:var(--mu)!important;font-family:'DM Mono',monospace!important;font-size:12px!important;padding:.5rem 1.2rem!important;border-radius:6px 6px 0 0!important;border:1px solid transparent!important;}
 .stTabs [aria-selected="true"]{background:var(--bg)!important;color:var(--tx)!important;border-color:var(--bd)!important;border-bottom-color:var(--bg)!important;}
@@ -1051,11 +1051,16 @@ def fetch_intraday(sym: str, interval: str = "5m") -> pd.DataFrame:
                           auto_adjust=True, progress=False)
         if raw.empty:
             return pd.DataFrame()
-        # Flatten MultiIndex if present
         if isinstance(raw.columns, pd.MultiIndex):
             raw.columns = [c[0] for c in raw.columns]
         raw = rename_ohlcv(raw)
         raw.index = pd.to_datetime(raw.index)
+        # Convert index to IST — yfinance returns UTC for intraday
+        if raw.index.tzinfo is None:
+            raw.index = raw.index.tz_localize("UTC")
+        raw.index = raw.index.tz_convert(IST)
+        # Strip tz info for Plotly compatibility (keeps IST wall-clock values)
+        raw.index = raw.index.tz_localize(None)
         required = {"open","high","low","close","volume"}
         if not required.issubset(set(raw.columns)):
             return pd.DataFrame()
@@ -1164,10 +1169,19 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def detect_signals(df: pd.DataFrame) -> list[dict]:
+    """
+    Analyse each candle using multiple indicators.
+    Each candle gets a BUY score and SELL score from all indicators.
+    If net score favours BUY → emit one BUY signal.
+    If net score favours SELL → emit one SELL signal.
+    Markers on chart show only ▲ BUY or ▼ SELL — no clutter.
+    The contributing patterns are recorded in "patterns" for the signal log.
+    """
     out = []
     if df.empty or len(df) < 6:
         return out
     df = compute_indicators(df)
+
     for i in range(5, len(df)):
         c0 = df.iloc[i]
         c1 = df.iloc[i-1]
@@ -1175,64 +1189,126 @@ def detect_signals(df: pd.DataFrame) -> list[dict]:
         price = float(c0["close"])
 
         def _f(row, col):
-            v = row.get(col, np.nan) if hasattr(row, "get") else row[col] if col in row.index else np.nan
+            v = row[col] if col in row.index else np.nan
             try: return float(v)
             except: return np.nan
 
         op0,cl0,hi0,lo0 = _f(c0,"open"),_f(c0,"close"),_f(c0,"high"),_f(c0,"low")
-        op1,cl1,hi1,lo1 = _f(c1,"open"),_f(c1,"close"),_f(c1,"high"),_f(c1,"low")
+        op1,cl1         = _f(c1,"open"),_f(c1,"close")
 
-        # 1. Bullish Engulfing
+        buy_score  = 0
+        sell_score = 0
+        buy_reasons  = []
+        sell_reasons = []
+
+        # 1. Candlestick patterns
         if cl1<op1 and cl0>op0 and cl0>op1 and op0<cl1:
-            out.append({"ts":ts,"type":"BUY","pattern":"Bullish Engulfing","price":price})
-
-        # 2. Bearish Engulfing
+            buy_score += 2; buy_reasons.append("Bullish Engulfing")
         if cl1>op1 and cl0<op0 and cl0<op1 and op0>cl1:
-            out.append({"ts":ts,"type":"SELL","pattern":"Bearish Engulfing","price":price})
+            sell_score += 2; sell_reasons.append("Bearish Engulfing")
 
-        # 3. RSI
+        # Hammer (long lower wick, small body near top)
+        body = abs(cl0 - op0)
+        lower_wick = min(cl0,op0) - lo0
+        upper_wick = hi0 - max(cl0,op0)
+        candle_range = hi0 - lo0
+        if candle_range > 0:
+            if lower_wick > body * 2 and upper_wick < body and cl0 > op0:
+                buy_score += 2; buy_reasons.append("Hammer")
+            if upper_wick > body * 2 and lower_wick < body and cl0 < op0:
+                sell_score += 2; sell_reasons.append("Shooting Star")
+
+        # 2. RSI
         rsi0 = _f(c0,"rsi"); rsi1 = _f(c1,"rsi")
         if not (np.isnan(rsi0) or np.isnan(rsi1)):
+            if rsi0 < 30:
+                buy_score += 2; buy_reasons.append(f"RSI oversold ({rsi0:.0f})")
+            elif rsi0 < 40:
+                buy_score += 1; buy_reasons.append(f"RSI low ({rsi0:.0f})")
+            if rsi0 > 70:
+                sell_score += 2; sell_reasons.append(f"RSI overbought ({rsi0:.0f})")
+            elif rsi0 > 60:
+                sell_score += 1; sell_reasons.append(f"RSI high ({rsi0:.0f})")
+            # RSI turning
             if rsi1 < 30 and rsi0 > rsi1:
-                out.append({"ts":ts,"type":"BUY","pattern":"RSI Oversold Bounce","price":price})
+                buy_score += 1; buy_reasons.append("RSI turning up")
             if rsi1 > 70 and rsi0 < rsi1:
-                out.append({"ts":ts,"type":"SELL","pattern":"RSI Overbought","price":price})
+                sell_score += 1; sell_reasons.append("RSI turning down")
 
-        # 4. VWAP bounce
+        # 3. VWAP position
         vwap = _f(c0,"vwap")
         if not np.isnan(vwap):
-            if lo1 < vwap and cl0 > vwap and cl0 > op0:
-                out.append({"ts":ts,"type":"BUY","pattern":"VWAP Bounce","price":price})
+            if cl0 > vwap and op0 < vwap:                    # crossed above
+                buy_score += 2; buy_reasons.append("Crossed above VWAP")
+            elif cl0 > vwap:
+                buy_score += 1; buy_reasons.append("Above VWAP")
+            if cl0 < vwap and op0 > vwap:                    # crossed below
+                sell_score += 2; sell_reasons.append("Crossed below VWAP")
+            elif cl0 < vwap:
+                sell_score += 1; sell_reasons.append("Below VWAP")
 
-        # 5. EMA crossover
+        # 4. EMA 9/21 crossover
         e9_0 = _f(c0,"ema9"); e21_0 = _f(c0,"ema21")
         e9_1 = _f(c1,"ema9"); e21_1 = _f(c1,"ema21")
         if not any(np.isnan(x) for x in [e9_0,e21_0,e9_1,e21_1]):
             if e9_1 < e21_1 and e9_0 > e21_0:
-                out.append({"ts":ts,"type":"BUY","pattern":"EMA 9/21 Cross","price":price})
+                buy_score += 3; buy_reasons.append("EMA 9 crossed above 21")
+            elif e9_0 > e21_0:
+                buy_score += 1; buy_reasons.append("EMA 9 > 21")
             if e9_1 > e21_1 and e9_0 < e21_0:
-                out.append({"ts":ts,"type":"SELL","pattern":"EMA Death Cross","price":price})
+                sell_score += 3; sell_reasons.append("EMA 9 crossed below 21")
+            elif e9_0 < e21_0:
+                sell_score += 1; sell_reasons.append("EMA 9 < 21")
 
-        # 6. Volume breakout
+        # 5. Volume confirmation
         avg_vol = float(df["volume"].iloc[max(0,i-20):i].mean())
-        if avg_vol > 0 and float(c0["volume"]) > avg_vol * 2 and cl0 > op0:
-            out.append({"ts":ts,"type":"BUY","pattern":"Volume Breakout","price":price})
+        if avg_vol > 0:
+            vol_ratio = float(c0["volume"]) / avg_vol
+            if vol_ratio > 1.5 and cl0 > op0:
+                buy_score  += 2; buy_reasons.append(f"Vol surge {vol_ratio:.1f}x (bullish)")
+            if vol_ratio > 1.5 and cl0 < op0:
+                sell_score += 2; sell_reasons.append(f"Vol surge {vol_ratio:.1f}x (bearish)")
 
-        # 7. Bollinger
-        bbu = _f(c0,"bb_upper"); bbl = _f(c0,"bb_lower")
+        # 6. Bollinger Band extremes
+        bbu = _f(c0,"bb_upper"); bbl = _f(c0,"bb_lower"); bbm = _f(c0,"bb_mid")
         if not np.isnan(bbu):
-            if cl0 > bbu:
-                out.append({"ts":ts,"type":"SELL","pattern":"BB Upper Break","price":price})
             if cl0 < bbl:
-                out.append({"ts":ts,"type":"BUY","pattern":"BB Lower Bounce","price":price})
+                buy_score  += 2; buy_reasons.append("Below BB lower band")
+            elif not np.isnan(bbm) and cl0 > bbm and _f(c1,"close") < bbm:
+                buy_score  += 1; buy_reasons.append("BB mid crossover up")
+            if cl0 > bbu:
+                sell_score += 2; sell_reasons.append("Above BB upper band")
+            elif not np.isnan(bbm) and cl0 < bbm and _f(c1,"close") > bbm:
+                sell_score += 1; sell_reasons.append("BB mid crossover down")
 
-    # Deduplicate (1 signal per candle per type)
-    seen, dedup = set(), []
-    for s in out:
-        k = (str(s["ts"]), s["type"])
-        if k not in seen:
-            seen.add(k); dedup.append(s)
-    return dedup
+        # 7. MACD histogram momentum
+        mh0 = _f(c0,"macd_hist"); mh1 = _f(c1,"macd_hist")
+        if not (np.isnan(mh0) or np.isnan(mh1)):
+            if mh0 > 0 and mh1 <= 0:
+                buy_score  += 2; buy_reasons.append("MACD hist turned positive")
+            elif mh0 > 0 and mh0 > mh1:
+                buy_score  += 1; buy_reasons.append("MACD hist rising")
+            if mh0 < 0 and mh1 >= 0:
+                sell_score += 2; sell_reasons.append("MACD hist turned negative")
+            elif mh0 < 0 and mh0 < mh1:
+                sell_score += 1; sell_reasons.append("MACD hist falling")
+
+        # ── Net verdict: only emit a signal if score difference is meaningful ──
+        net = buy_score - sell_score
+        if net >= 3:            # clear BUY consensus
+            out.append({
+                "ts": ts, "type": "BUY", "price": price,
+                "score": buy_score, "pattern": ", ".join(buy_reasons[:3]),
+                "detail": buy_reasons,
+            })
+        elif net <= -3:         # clear SELL consensus
+            out.append({
+                "ts": ts, "type": "SELL", "price": price,
+                "score": sell_score, "pattern": ", ".join(sell_reasons[:3]),
+                "detail": sell_reasons,
+            })
+
+    return out
 
 # ─── SCREENER ─────────────────────────────────────────────────────────────────
 
@@ -1385,34 +1461,44 @@ def build_intraday_chart(sym: str, signals: list[dict]) -> go.Figure:
             name="BB Lower", showlegend=False,
         ), row=1, col=1)
 
-    # ── BUY signals ──
+    # ── BUY signals — clean triangles only, no text clutter ──
     buys = [s for s in signals if s["type"]=="BUY"]
     if buys:
         fig.add_trace(go.Scatter(
-            x=[s["ts"]  for s in buys],
-            y=[s["price"]*0.997 for s in buys],
-            mode="markers+text",
-            marker=dict(symbol="triangle-up", size=11, color="#00d4aa"),
-            text=[s["pattern"][:10] for s in buys],
-            textposition="bottom center",
-            textfont=dict(color="#00d4aa", size=8),
+            x=[s["ts"] for s in buys],
+            y=[s["price"] * 0.996 for s in buys],
+            mode="markers",
+            marker=dict(
+                symbol="triangle-up", size=13, color="#00d4aa",
+                line=dict(color="#07090f", width=1),
+            ),
             name="BUY",
-            hovertemplate="<b>BUY</b> %{text}<br>₹%{y:.2f}",
+            hovertemplate=(
+                "<b style='color:#00d4aa'>▲ BUY</b><br>"
+                "Price: ₹%{customdata[0]:.2f}<br>"
+                "Reason: %{customdata[1]}<extra></extra>"
+            ),
+            customdata=[[s["price"], s.get("pattern","—")] for s in buys],
         ), row=1, col=1)
 
-    # ── SELL signals ──
+    # ── SELL signals — clean triangles only, no text clutter ──
     sells = [s for s in signals if s["type"]=="SELL"]
     if sells:
         fig.add_trace(go.Scatter(
             x=[s["ts"] for s in sells],
-            y=[s["price"]*1.003 for s in sells],
-            mode="markers+text",
-            marker=dict(symbol="triangle-down", size=11, color="#ff4d6d"),
-            text=[s["pattern"][:10] for s in sells],
-            textposition="top center",
-            textfont=dict(color="#ff4d6d", size=8),
+            y=[s["price"] * 1.004 for s in sells],
+            mode="markers",
+            marker=dict(
+                symbol="triangle-down", size=13, color="#ff4d6d",
+                line=dict(color="#07090f", width=1),
+            ),
             name="SELL",
-            hovertemplate="<b>SELL</b> %{text}<br>₹%{y:.2f}",
+            hovertemplate=(
+                "<b style='color:#ff4d6d'>▼ SELL</b><br>"
+                "Price: ₹%{customdata[0]:.2f}<br>"
+                "Reason: %{customdata[1]}<extra></extra>"
+            ),
+            customdata=[[s["price"], s.get("pattern","—")] for s in sells],
         ), row=1, col=1)
 
     # ── RSI ──
@@ -1510,7 +1596,7 @@ def build_swing_chart(sym: str) -> go.Figure:
 
 def render_header(user: dict | None = None):
     open_ = is_market_open()
-    now   = datetime.now(IST).strftime("%d %b %Y · %H:%M IST")
+    now   = datetime.now(IST).strftime("%d %b %Y  %H:%M IST")
     badge = ('<span class="mkt-open">● LIVE · NSE/BSE</span>'
              if open_ else '<span class="mkt-closed">● MARKET CLOSED</span>')
     user_html = ""
@@ -1857,10 +1943,23 @@ def tab_charts():
                 # Signal log
                 st.markdown('<div class="sec" style="margin-top:.8rem">Signal Log (last 15)</div>',
                             unsafe_allow_html=True)
-                sig_rows = [{"Time":s["ts"].strftime("%H:%M") if hasattr(s["ts"],"strftime") else str(s["ts"]),
-                              "Signal":s["type"],"Pattern":s["pattern"],"Price":fp(s["price"])}
-                            for s in sigs[-15:]][::-1]
-                st.dataframe(pd.DataFrame(sig_rows), width='stretch', hide_index=True)
+                def _fmt_ts_ist(ts):
+                    """Format timestamp as IST HH:MM — handles tz-naive (already IST) or tz-aware."""
+                    try:
+                        if hasattr(ts, "tzinfo") and ts.tzinfo is not None:
+                            ts = ts.astimezone(IST).replace(tzinfo=None)
+                        return ts.strftime("%H:%M IST") if hasattr(ts, "strftime") else str(ts)
+                    except Exception:
+                        return str(ts)
+
+                sig_rows = [{
+                    "Time (IST)": _fmt_ts_ist(s["ts"]),
+                    "Signal":     s["type"],
+                    "Indicators": s.get("pattern", "—"),
+                    "Score":      s.get("score", "—"),
+                    "Price":      fp(s["price"]),
+                } for s in sigs[-15:]][::-1]
+                st.dataframe(pd.DataFrame(sig_rows), width='content', hide_index=True)
 
             elif not df_raw.empty:
                 st.info("No signals detected in today's data. Market may be pre-open or data is insufficient for pattern detection.")
@@ -1926,21 +2025,45 @@ def main():
     if "news_pg" not in st.session_state:
         st.session_state["news_pg"] = 0
 
-    # Sidebar logout
+    # Sidebar — user info + sign out
     with st.sidebar:
+        initials = "".join(w[0].upper() for w in user.get("name","U").split()[:2])
+        mobile_disp = user.get("mobile","")
+        mobile_disp = f"+91 {mobile_disp[:5]} {mobile_disp[5:]}" if mobile_disp else "—"
         st.markdown(f"""
-        <div style="padding:.75rem;background:#0d1520;border-radius:10px;
-             border:1px solid rgba(255,255,255,.08);margin-bottom:1rem;text-align:center">
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:#4e6a8a;
-               text-transform:uppercase;letter-spacing:.06em">Signed in as</div>
+        <div style="padding:.85rem;background:#0d1520;border-radius:12px;
+             border:1px solid rgba(255,255,255,.1);margin-bottom:.75rem;text-align:center">
+          <div style="width:44px;height:44px;border-radius:50%;background:#00d4aa;
+               margin:0 auto .6rem;display:flex;align-items:center;justify-content:center;
+               font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#07090f">
+            {initials}
+          </div>
           <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
-               color:#dde8f8;margin-top:4px">{user.get("name","")}</div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;
-               color:#7a9bc0;margin-top:2px">{user.get("email","")}</div>
+               color:#dde8f8">{user.get("name","")}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;
+               color:#7a9bc0;margin-top:4px">{user.get("email","")}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;
+               color:#4e6a8a;margin-top:2px">{mobile_disp}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:8px;color:#2d4a6a;
+               margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)">
+            Member since {user.get("created_at","")[:10] if user.get("created_at") else "—"}
+          </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("🚪  Sign Out", use_container_width=True):
+
+        st.markdown("""
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:#4e6a8a;
+             text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem">Navigation</div>
+        """, unsafe_allow_html=True)
+
+        if st.button("🚪  Sign Out", width='content', key="sb_signout"):
             _logout_user()
+
+        st.markdown("""
+        <div style="margin-top:1.5rem;font-family:'DM Mono',monospace;font-size:8px;
+             color:#2d4a6a;text-align:center;line-height:1.6">
+          For educational use only<br>Not investment advice
+        </div>""", unsafe_allow_html=True)
 
     render_header(user)
 
